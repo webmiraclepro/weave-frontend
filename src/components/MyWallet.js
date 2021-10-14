@@ -37,6 +37,18 @@ const MyWallet = () => {
 
 	const web3 = new Web3(Web3.givenProvider)
 
+	const getEth = (account) => {
+		web3.eth.getBalance(account, function(err, result) {
+		  if (err) {
+		    console.log(err)
+		  } else {
+		    dispatch(setMyEther(web3.utils.fromWei(result, "ether")))
+		  }
+		})
+
+		setTimeout(() => getEth(account));
+	}
+
 	const handleConnectWallet = async () => {
 		try {
 		  // Request account access
@@ -48,13 +60,8 @@ const MyWallet = () => {
 		const accounts = await web3.eth.getAccounts()
 		dispatch(setMyAddress(accounts[0]))
 
-		web3.eth.getBalance(accounts[0], function(err, result) {
-		  if (err) {
-		    console.log(err)
-		  } else {
-		    dispatch(setMyEther(web3.utils.fromWei(result, "ether")))
-		  }
-		})
+
+		setTimeout(() => getEth(accounts[0]))
   }
 
 	return (
