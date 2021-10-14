@@ -1,8 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import { TextField, InputAdornment } from '@material-ui/core';
 import { Table, TableBody, TableCell, TableHead, TableRow } from '@material-ui/core';
 import AccountCircle from '@material-ui/icons/AccountCircle';
+
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../store';
+import { setRecentLogs } from '../main/MainBoardSlice';
+
+import web3 from '../core/web3';
+import game from '../core/gameInstance';
 import MyWallet from './MyWallet';
 import '../css/Dice.css'
 
@@ -44,6 +51,12 @@ const useStyles = makeStyles({
   	width: 450,
   	maxHeight: '55vh',
   	overflow: 'auto'
+  },
+  cup: {
+  	position: 'absolute',
+  	top: '3vh',
+  	left: '50%',
+  	transform: 'translate(-50%, 0)'
   }
 })
 
@@ -82,34 +95,51 @@ const Dice = (props) => {
 	)
 }
 
-const DiceBoard = () => {
+const DiceBoard = ({ gameState, creatorAddress, joinerAddress }) => {
 	const classes = useStyles();
+  const dispatch = useDispatch()
 
-	let id = 0;
-	const createData = (winner, loser, amount) => {
-	  id += 1;
-	  return { id, winner, loser, amount };
-	}
+	useEffect(() => {
+		let id = 0;
+		const createData = (winner, loser, amount) => {
+		  id += 1;
+		  return { id, winner, loser, amount };
+		}
 
-	const rows = [
-		createData('0xA05C8...e66d3b', '0xA05C8...e66d3b', 0.123),
-		createData('0xA05C8...e66d3b', '0xA05C8...e66d3b', 0.123),
-		createData('0xA05C8...e66d3b', '0xA05C8...e66d3b', 0.123),
-		createData('0xA05C8...e66d3b', '0xA05C8...e66d3b', 0.123),
-		createData('0xA05C8...e66d3b', '0xA05C8...e66d3b', 0.123),
-		createData('0xA05C8...e66d3b', '0xA05C8...e66d3b', 0.123),
-		createData('0xA05C8...e66d3b', '0xA05C8...e66d3b', 0.123),
-		createData('0xA05C8...e66d3b', '0xA05C8...e66d3b', 0.123),
-		createData('0xA05C8...e66d3b', '0xA05C8...e66d3b', 0.123),
-		createData('0xA05C8...e66d3b', '0xA05C8...e66d3b', 0.123),
-	];
+		const shortenAddress = (address) => {
+			return address.substring(0, 7) + "..." + address.substring(address.length - 5)
+		}
+
+		const fetchData = async () => {
+		  let rows = []
+			for (var i = 0; i < 10; i++) {
+				const recentLog = await game.methods.recentLogs(i).call()
+				const winner = shortenAddress(recentLog.winner)
+				const loser = shortenAddress(recentLog.loser)
+				const amount = web3.utils.fromWei(recentLog.amount, "ether");
+				rows.push(createData(winner, loser, amount))
+			}
+			dispatch(setRecentLogs(rows))
+		}
+		fetchData()
+	}, [])
+
+	const recentLogs = useSelector((state: RootState) => state.main.recentLogs)
 
 	return (
 		<div className={classes.root}>
 			<div className={classes.stateBoard}>
 				<MyWallet />
 				<div style={{color: '#42cddb', fontSize: '20pt'}}>
-					Game is ready!
+					{!gameState ?
+						<span>
+							Game is ready !<br/><br/>Please bet and create !
+						</span>
+					:
+						<span>
+							Someone has created !<br/><br/>Please join now !
+						</span>
+					}
 				</div>
 			</div>
 			<div className={classes.playground}>
@@ -127,15 +157,25 @@ const DiceBoard = () => {
 					}}
 					alt="dice"
 			  />
+				<img 
+					src='/dice/cup.png'
+					className={classes.cup}
+					alt="cup"
+			  />
 			</div>
 			<div className={classes.details}>
 				<div style={{color: '#42cddb', fontSize: '20pt'}}>
-					Current State
+					{!gameState ?
+						"Last Play"
+					:
+						"Current State"
+					}
 				</div>
 				<TextField
 	        label="Creator Address:"
 	        style={{width: '450px'}}
 	        disabled
+	        value={creatorAddress}
 	        InputProps={{
 	          startAdornment: (
 	            <InputAdornment position="start">
@@ -148,6 +188,7 @@ const DiceBoard = () => {
 	        label="Joiner Address:"
 	        style={{width: '450px'}}
 	        disabled
+	        value={joinerAddress}
 	        InputProps={{
 	          startAdornment: (
 	            <InputAdornment position="start">
@@ -169,7 +210,7 @@ const DiceBoard = () => {
 		          </TableRow>
 		        </TableHead>
 		        <TableBody>
-		          {rows.map(row => (
+		          {recentLogs.map(row => (
 		            <TableRow key={row.id}>
 		              <TableCell component="th" scope="row">
 		                {row.winner}

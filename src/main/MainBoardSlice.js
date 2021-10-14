@@ -6,12 +6,11 @@ const mainSlice = createSlice({
 		myAddress: null,		
 		myEther: 0,
 		myChoice: 0,
-		gameInstance: null,
 		creatorAddress: null,
 		joinerAddress: null,
 		amount: 0,
 		gameState: null,
-		boardState: []
+		recentLogs: []
 	},
 	reducers: {
 		setMyAddress: (state, action) => {
@@ -20,7 +19,7 @@ const mainSlice = createSlice({
 		setMyEther: (state, action) => {
 			state.myEther = action.payload
 		},
-		setGameInstance: (state, action) => {
+		setGameState: (state, action) => {
 			state.gameState = action.payload
 		},
 		setCreatorAddress: (state, action) => {
@@ -34,18 +33,22 @@ const mainSlice = createSlice({
 		},
 		setMyChoice: (state, action) => {
 			state.myChoice = action.payload
-		}
+		},
+		setRecentLogs: (state, action) => {
+			state.recentLogs = action.payload
+		},
 	}
 })
 
 export const { 
-	setGameInstance,
+	setGameState,
 	setCreatorAddress,
 	setJoinerAddress,
 	setAmount,
 	setMyChoice,
 	setMyAddress,
 	setMyEther,
+	setRecentLogs,
 } = mainSlice.actions
 
 export default mainSlice.reducer

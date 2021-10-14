@@ -7,7 +7,7 @@ import Swal from 'sweetalert2';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import {
-	setGameInstance,
+	setGameState,
 	setCreatorAddress,
 	setJoinerAddress,
 	setAmount,
@@ -15,7 +15,7 @@ import {
 } from './MainBoardSlice';
 
 import web3 from '../core/web3';
-import { ADDRESS, ABI } from '../config/config';
+import game from '../core/gameInstance';
 
 const useStyles = makeStyles({
 	root: {
@@ -51,28 +51,49 @@ const useStyles = makeStyles({
 	}
 })
 
-const game = new web3.eth.Contract(ABI, ADDRESS)
-
 const MainBoard = () => {
 	const classes = useStyles();
-
-	const [isCreated, setIsCreated] = useState(false)
-	useEffect(() => {
-		const fetchData = async () => {
-			await game.events.gameCreated().on('data', (event) => {
-				console.log(event)
-			})
-			const state = await game.methods.isGameCreated().call()
-			setIsCreated(state)
-		}
-		fetchData()
-	}, [])
-
   const dispatch = useDispatch()
+
+	const gameState = useSelector((state: RootState) => state.main.gameState)
+	const creatorAddress = useSelector((state: RootState) => state.main.creatorAddress)
+	const joinerAddress = useSelector((state: RootState) => state.main.joinerAddress)
 	const amount = useSelector((state: RootState) => state.main.amount)
 	const myChoice = useSelector((state: RootState) => state.main.myChoice)
 	const myAddress = useSelector((state: RootState) => state.main.myAddress)
 	const myEther = useSelector((state: RootState) => state.main.myEther)
+
+	useEffect(() => {
+		const fetchData = async () => {
+			const gameState = await game.methods.isGameCreated().call()
+			const creatorAddress = await game.methods.player1().call()
+			const joinerAddress = await game.methods.player2().call()
+			const betAmount = await game.methods.betAmount().call()
+			const betAmountInEth = web3.utils.fromWei(betAmount, "ether");
+			const p1Choice = await game.methods.p1Choice().call()
+
+			dispatch(setGameState(gameState))
+			dispatch(setCreatorAddress(creatorAddress))
+			dispatch(setJoinerAddress(joinerAddress))
+			dispatch(setAmount(betAmountInEth))
+			dispatch(setMyChoice(1 - p1Choice))
+
+			await game.events.gameCreated().on('data', (event) => {
+				dispatch(setGameState(true))
+				dispatch(setCreatorAddress(event.returnValues[0]))
+				dispatch(setJoinerAddress(''))
+				dispatch(setAmount(web3.utils.fromWei(event.returnValues[1], "ether")))
+				dispatch(setMyChoice(1 - event.returnValues[2]))
+			})
+			await game.events.gameFinished().on('data', (event) => {
+				dispatch(setGameState(false))
+				dispatch(setJoinerAddress(myAddress))
+				dispatch(setAmount(0))
+				dispatch(setMyChoice(0))
+			})
+		}
+		fetchData()
+	}, [])
 
 	const handleChange = (event) => {
 		dispatch(setAmount(event.target.value))
@@ -95,17 +116,12 @@ const MainBoard = () => {
 				from: myAddress,
 				value: amountToSend,
 			})
-			// await game.events.gameCreated().on('data', (result) => {
-			// 	console.log(result)
-			// 	dispatch(setCreatorAddress(result.args.p1))
-			// })
 		}
 	}
 
 	const handleJoin = async () => {
 		const betAmount = await game.methods.betAmount().call()
 		const betAmountInEth = web3.utils.fromWei(betAmount, "ether");
-		console.log(betAmountInEth, myEther)
 		if (betAmountInEth > myEther) {
 			Swal.fire('Eth is not enough.\nPlease check your wallet !!!')
 		} else {
@@ -118,13 +134,18 @@ const MainBoard = () => {
 
 	return (
 		<div className={classes.root}>
-			<DiceBoard />
+			<DiceBoard 
+				gameState={gameState}
+				creatorAddress={creatorAddress}
+				joinerAddress={joinerAddress}
+			/>
 			<div className={classes.footer}>
         <div className={classes.inputPanel}>
 					<Input
 	          className={classes.input}
 	          value={amount}
 	          placeholder="0"
+	          disabled={gameState}
 	          onChange={handleChange}
 	          endAdornment={
 	          	<InputAdornment position="end">
@@ -134,6 +155,7 @@ const MainBoard = () => {
 	        />
 	        <Select 
 	        	className={classes.select} 
+	          disabled={gameState}
 	        	value={myChoice}
 	        	onChange={handleSelect}
 	        >
@@ -141,7 +163,7 @@ const MainBoard = () => {
 				    <MenuItem value={1}>Odd</MenuItem>
 				  </Select>
 			  </div>
-			  {!isCreated ?
+			  {!gameState ?
 					<Button 
 						variant="contained" 
 						color="secondary" 

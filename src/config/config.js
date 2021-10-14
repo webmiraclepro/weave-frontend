@@ -1,4 +1,4 @@
-export const ADDRESS = '0x4DA41C83825b3f56893bF5B9D63cBED952a3d8c6'
+export const ADDRESS = '0x1698e037Bd89E1efD35E8a0b687f93440bF92ba5'
 
 export const ABI = [
 	{
@@ -93,6 +93,32 @@ export const ABI = [
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "player1",
+		"outputs": [
+			{
+				"internalType": "address payable",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "player2",
+		"outputs": [
+			{
+				"internalType": "address payable",
+				"name": "",
+				"type": "address"
 			}
 		],
 		"stateMutability": "view",
