@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import DiceBoard from '../components/DiceBoard';
-import { Input, InputAdornment, Button, Select, MenuItem } from '@material-ui/core';
+import { Input, InputAdornment, Button, Select, MenuItem, CircularProgress } from '@material-ui/core';
 import Swal from 'sweetalert2';
 
 import { useSelector, useDispatch } from 'react-redux';
@@ -56,12 +56,14 @@ const MainBoard = () => {
   const dispatch = useDispatch()
 
 	const gameState = useSelector((state: RootState) => state.main.gameState)
-	const creatorAddress = useSelector((state: RootState) => state.main.creatorAddress)
-	const joinerAddress = useSelector((state: RootState) => state.main.joinerAddress)
 	const amount = useSelector((state: RootState) => state.main.amount)
 	const myChoice = useSelector((state: RootState) => state.main.myChoice)
 	const myAddress = useSelector((state: RootState) => state.main.myAddress)
 	const myEther = useSelector((state: RootState) => state.main.myEther)
+
+	const [dice1, setDice1] = useState(1)
+	const [dice2, setDice2] = useState(1)
+	const [isLoading, setIsLoading] = useState(false)
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -84,16 +86,20 @@ const MainBoard = () => {
 				dispatch(setJoinerAddress(''))
 				dispatch(setAmount(web3.utils.fromWei(event.returnValues[1], "ether")))
 				dispatch(setMyChoice(1 - event.returnValues[2]))
+				setIsLoading(false)
 			})
 			await game.events.gameFinished().on('data', (event) => {
 				dispatch(setGameState(false))
-				dispatch(setJoinerAddress(myAddress))
+				dispatch(setJoinerAddress(event.returnValues[0]))
 				dispatch(setAmount(0))
 				dispatch(setMyChoice(0))
+				setDice1(event.returnValues[1])
+				setDice2(event.returnValues[2])
+				setIsLoading(false)
 			})
 		}
 		fetchData()
-	}, [])
+	}, [gameState])
 
 	const handleChange = (event) => {
 		dispatch(setAmount(event.target.value))
@@ -111,6 +117,7 @@ const MainBoard = () => {
 		if (amount >= myEther) {
 			Swal.fire('Eth is not enough.\nPlease check your wallet !!!')
 		} else {
+			setIsLoading(true)
 			const amountToSend = web3.utils.toWei(amount, "ether");
 			await game.methods.createGame(myChoice).send({
 				from: myAddress,
@@ -125,6 +132,7 @@ const MainBoard = () => {
 		if (betAmountInEth > myEther) {
 			Swal.fire('Eth is not enough.\nPlease check your wallet !!!')
 		} else {
+			setIsLoading(true)
 			await game.methods.joinGame().send({
 				from: myAddress,
 				value: betAmount,
@@ -136,8 +144,8 @@ const MainBoard = () => {
 		<div className={classes.root}>
 			<DiceBoard 
 				gameState={gameState}
-				creatorAddress={creatorAddress}
-				joinerAddress={joinerAddress}
+				dice1={dice1}
+				dice2={dice2}
 			/>
 			<div className={classes.footer}>
         <div className={classes.inputPanel}>
@@ -170,7 +178,11 @@ const MainBoard = () => {
 						className={classes.button}
 						onClick={handleCreate}
 					>
-		        Create Game
+						{!isLoading ?
+			        "Create Game"
+		        :
+			        <CircularProgress color="inherit"/>
+						}
 		      </Button>
 	      :
 					<Button 
@@ -179,7 +191,11 @@ const MainBoard = () => {
 						className={classes.button}
 						onClick={handleJoin}
 					>
-		        Join Game
+						{!isLoading ?
+			        "Join Game"
+		        :
+			        <CircularProgress color="inherit" />
+						}
 		      </Button>
 		    }
 			</div>

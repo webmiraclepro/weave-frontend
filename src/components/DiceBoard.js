@@ -54,14 +54,14 @@ const useStyles = makeStyles({
   },
   cup: {
   	position: 'absolute',
-  	top: '3vh',
+  	top: '-50vh',
   	left: '50%',
   	transform: 'translate(-50%, 0)'
   }
 })
 
 const Dice = (props) => {
-	const url = '/dice/' + props.value + '.png'
+	const url = '/dice/' + props.value + '.PNG'
 	return (
 		<div>
 			{props.first ?
@@ -95,9 +95,12 @@ const Dice = (props) => {
 	)
 }
 
-const DiceBoard = ({ gameState, creatorAddress, joinerAddress }) => {
+const DiceBoard = ({ gameState, dice1, dice2 }) => {
 	const classes = useStyles();
   const dispatch = useDispatch()
+
+	const creatorAddress = useSelector((state: RootState) => state.main.creatorAddress)
+	const joinerAddress = useSelector((state: RootState) => state.main.joinerAddress)
 
 	useEffect(() => {
 		let id = 0;
@@ -122,7 +125,7 @@ const DiceBoard = ({ gameState, creatorAddress, joinerAddress }) => {
 			dispatch(setRecentLogs(rows))
 		}
 		fetchData()
-	}, [])
+	}, [gameState])
 
 	const recentLogs = useSelector((state: RootState) => state.main.recentLogs)
 
@@ -148,8 +151,8 @@ const DiceBoard = ({ gameState, creatorAddress, joinerAddress }) => {
 						height: '20vh',
 					}}
 			  />
-				<Dice value={1} first/>
-				<Dice value={5} second/>
+				<Dice value={dice1} first/>
+				<Dice value={dice2} second/>
 				<img 
 					src='/dice/table.png'
 					style={{
@@ -161,7 +164,7 @@ const DiceBoard = ({ gameState, creatorAddress, joinerAddress }) => {
 					src='/dice/cup.png'
 					className={classes.cup}
 					alt="cup"
-			  />
+			   />
 			</div>
 			<div className={classes.details}>
 				<div style={{color: '#42cddb', fontSize: '20pt'}}>
@@ -210,15 +213,18 @@ const DiceBoard = ({ gameState, creatorAddress, joinerAddress }) => {
 		          </TableRow>
 		        </TableHead>
 		        <TableBody>
-		          {recentLogs.map(row => (
-		            <TableRow key={row.id}>
-		              <TableCell component="th" scope="row">
-		                {row.winner}
-		              </TableCell>
-		              <TableCell align="right">{row.loser}</TableCell>
-		              <TableCell align="right">{row.amount} Eth</TableCell>
-		            </TableRow>
-		          ))}
+		          {recentLogs.map(row => {
+		          	if (row.amount === '0') return
+		          	return (
+			            <TableRow key={row.id}>
+			              <TableCell component="th" scope="row">
+			                {row.winner}
+			              </TableCell>
+			              <TableCell align="right">{row.loser}</TableCell>
+			              <TableCell align="right">{row.amount} Eth</TableCell>
+			            </TableRow>
+			          )
+			        })}
 		        </TableBody>
 		      </Table>
 				</div>

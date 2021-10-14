@@ -1,4 +1,4 @@
-export const ADDRESS = '0x1698e037Bd89E1efD35E8a0b687f93440bF92ba5'
+export const ADDRESS = '0x1f2F5B6492eb2f2EF310cC51f4FFA5E95949be97'
 
 export const ABI = [
 	{
@@ -28,7 +28,26 @@ export const ABI = [
 	},
 	{
 		"anonymous": false,
-		"inputs": [],
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
 		"name": "gameFinished",
 		"type": "event"
 	},
